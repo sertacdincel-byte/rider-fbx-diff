@@ -1,0 +1,38 @@
+<idea-plugin>
+  <id>com.bytelab.fbxdiff</id>
+  <name>FBX Diff Viewer</name>
+  <version>1.0.0</version>
+  <vendor>Bytelab</vendor>
+  <description><![CDATA[
+    <p>View FBX models in 3D inside the IDE and compare two revisions side by side.</p>
+    <ul>
+      <li><b>VCS diff</b> of an <code>.fbx</code> file (Git log, Show Diff, Compare with&hellip;) opens a two-pane 3D view
+        with synchronized cameras instead of <i>"Cannot show diff for an unknown file type"</i>.</li>
+      <li><b>Statistics with deltas</b>: per-mesh triangles, vertices (close to Unity's imported count), unique positions,
+        bones, blend shapes, UV sets and materials; a LOD summary, animation clips and material usage.</li>
+      <li><b>Opening</b> an <code>.fbx</code> file shows the same viewer for one file.</li>
+      <li>Clay, original and normal shading, wireframe, skeleton, LOD filter and animation clip playback.</li>
+    </ul>
+    <p>Everything runs locally in the IDE's embedded browser. No data leaves the machine.</p>
+  ]]></description>
+  <change-notes><![CDATA[
+    <p><b>1.0.0</b></p>
+    <ul>
+      <li>First release: FBX diff viewer, single-file viewer, mesh/LOD/animation/material statistics.</li>
+    </ul>
+  ]]></change-notes>
+  <idea-version since-build="262"/>
+
+  <dependencies>
+    <plugin id="com.intellij.modules.platform"/>
+    <module name="intellij.libraries.jcef"/>
+    <module name="intellij.platform.ui.jcef"/>
+  </dependencies>
+
+  <extensions defaultExtensionNs="com.intellij">
+    <fileType name="FBX" implementationClass="com.bytelab.fbxdiff.FbxFileType" fieldName="INSTANCE" extensions="fbx"/>
+    <diff.DiffTool implementation="com.bytelab.fbxdiff.FbxDiffTool"/>
+    <diff.impl.DiffToolSubstitutor implementation="com.bytelab.fbxdiff.FbxDiffToolSubstitutor"/>
+    <fileEditorProvider implementation="com.bytelab.fbxdiff.FbxFileEditorProvider"/>
+  </extensions>
+</idea-plugin>

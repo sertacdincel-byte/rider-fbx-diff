@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>FBX Diff</title>
+<style>
+:root {
+  --bg: #f7f8fa; --panel: #ffffff; --border: #dfe1e5; --text: #1e1f22; --muted: #6c707e;
+  --accent: #3574f0; --added: #208a3c; --removed: #db3b4b; --changed: #c27d04;
+  --row-hover: #edf3ff; --row-sel: #d4e2ff; --view-bg: #e9ebef; --btn: #ffffff; --btn-on: #d4e2ff;
+}
+body.dark {
+  --bg: #1e1f22; --panel: #2b2d30; --border: #393b40; --text: #dfe1e5; --muted: #868a91;
+  --accent: #548af7; --added: #57965c; --removed: #e55765; --changed: #e2a53a;
+  --row-hover: #2e3540; --row-sel: #2e436e; --view-bg: #25272b; --btn: #2b2d30; --btn-on: #2e436e;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
+  font: 12px/1.4 -apple-system, "Segoe UI", "Inter", system-ui, sans-serif; overflow: hidden; }
+#app { display: flex; flex-direction: column; height: 100%; }
+#toolbar { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; padding: 5px 8px;
+  border-bottom: 1px solid var(--border); background: var(--panel); flex: none; }
+#toolbar .group { display: flex; gap: 3px; align-items: center; }
+#toolbar label.lbl { color: var(--muted); margin-right: 2px; }
+button, select { font: inherit; color: var(--text); background: var(--btn); border: 1px solid var(--border);
+  border-radius: 4px; padding: 2px 8px; height: 24px; cursor: pointer; }
+button.on { background: var(--btn-on); border-color: var(--accent); }
+button:disabled, select:disabled { opacity: .45; cursor: default; }
+.sep { width: 1px; height: 18px; background: var(--border); }
+#split { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+#viewsWrap { position: relative; flex: 1 1 58%; min-height: 80px; }
+#views { position: absolute; inset: 0; display: flex; }
+#canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
+.view { position: relative; flex: 1; border-right: 1px solid var(--border); min-width: 0; }
+.view:last-child { border-right: 0; }
+.view .title { position: absolute; left: 0; right: 0; top: 0; padding: 4px 8px; display: flex; gap: 8px;
+  align-items: baseline; pointer-events: none; z-index: 2; }
+.view .title .name { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.view .title .meta { color: var(--muted); white-space: nowrap; }
+.view .msg { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  color: var(--muted); text-align: center; padding: 20px; pointer-events: none; z-index: 2; }
+.view .msg.err { color: var(--removed); }
+.view .hit { position: absolute; inset: 0; z-index: 1; }
+#divider { flex: none; height: 5px; cursor: row-resize; background: var(--border); }
+#stats { flex: 1 1 42%; overflow: auto; background: var(--panel); min-height: 60px; }
+#stats.hidden, #divider.hidden { display: none; }
+#viewsWrap.hidden { display: none; }
+.cards { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px; }
+.card { border: 1px solid var(--border); border-radius: 6px; padding: 5px 9px; min-width: 112px; background: var(--bg); }
+.card .k { color: var(--muted); font-size: 11px; }
+.card .v { font-size: 13px; font-weight: 600; white-space: nowrap; }
+.section { padding: 2px 8px 10px; }
+.section h3 { font-size: 12px; margin: 6px 0 4px; display: flex; gap: 10px; align-items: center; }
+.section h3 .opt { font-weight: normal; color: var(--muted); display: flex; gap: 4px; align-items: center; }
+table { border-collapse: collapse; width: 100%; }
+th, td { padding: 3px 8px; border-bottom: 1px solid var(--border); text-align: right; white-space: nowrap; }
+th { position: sticky; top: 0; background: var(--panel); color: var(--muted); font-weight: 600; cursor: pointer; user-select: none; z-index: 1; }
+th:first-child, td:first-child, th.l, td.l { text-align: left; }
+td.name { max-width: 380px; overflow: hidden; text-overflow: ellipsis; }
+tbody tr { cursor: pointer; }
+tbody tr:hover { background: var(--row-hover); }
+tbody tr.sel { background: var(--row-sel); }
+.st { display: inline-block; min-width: 62px; font-size: 11px; font-weight: 600; }
+.st.added { color: var(--added); } .st.removed { color: var(--removed); } .st.changed { color: var(--changed); } .st.same { color: var(--muted); font-weight: normal; }
+.d { font-size: 11px; margin-left: 4px; }
+.d.up { color: var(--removed); } .d.down { color: var(--added); }
+.arrow { color: var(--muted); margin: 0 3px; }
+.muted { color: var(--muted); }
+.empty { padding: 10px 8px; color: var(--muted); }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="toolbar">
+    <div class="group"><label class="lbl">Shading</label>
+      <select id="shading"><option value="clay">Clay</option><option value="original">Original</option><option value="normals">Normals</option></select>
+    </div>
+    <div class="group">
+      <button id="btnWire" title="Wireframe">Wireframe</button>
+      <button id="btnBones" title="Show skeleton">Skeleton</button>
+      <button id="btnGrid" class="on" title="Ground grid">Grid</button>
+    </div>
+    <div class="group"><label class="lbl">Rotate</label>
+      <select id="upAxis"><option value="auto">Auto</option><option value="x-">−90° X</option><option value="x+">+90° X</option></select>
+    </div>
+    <div class="group" id="lodGroup" style="display:none"><label class="lbl">LOD</label><select id="lod"></select></div>
+    <div class="sep"></div>
+    <div class="group">
+      <button id="btnSync" class="on" title="Move both cameras together">Sync cameras</button>
+      <button id="btnFrame" title="Frame the model (F)">Frame</button>
+    </div>
+    <div class="group" id="animGroup" style="display:none"><label class="lbl">Clip</label>
+      <select id="clip"></select><button id="btnPlay">Play</button>
+    </div>
+    <div class="sep"></div>
+    <div class="group">
+      <button id="btnLayout" title="Toggle 3D view and statistics">3D + Stats</button>
+    </div>
+  </div>
+  <div id="split">
+    <div id="viewsWrap">
+      <canvas id="canvas"></canvas>
+      <div id="views"></div>
+    </div>
+    <div id="divider"></div>
+    <div id="stats"></div>
+  </div>
+</div>
+<!--SCRIPT-->
+</body>
+</html>
