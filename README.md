@@ -21,12 +21,18 @@ Everything runs locally in the IDE's embedded browser; no data leaves the machin
 
 ## Kurulum (TR)
 
-1. `FbxDiff-<sürüm>.zip` dosyasını al (zip'i açma).
-2. Rider → **Settings → Plugins → ⚙ (dişli) → Install Plugin from Disk…** → zip'i seç.
-3. Rider'ı yeniden başlat.
-4. Test: Git log'da bir FBX commit'i seç → dosyaya sağ tık → **Show Diff**. İki model yan yana açılmalı.
+Önerilen yol, güncellemelerin otomatik gelmesi için eklenti deposunu eklemek:
 
-Ekip deposu kullanılıyorsa (aşağıdaki *Custom repository*), bir kez **Settings → Plugins → ⚙ → Manage Plugin Repositories… → +** ile depo adresini ekle. Sonra eklenti Marketplace sekmesinde görünür ve yeni sürümler Rider'ın normal güncelleme bildirimiyle gelir.
+1. Rider → **Settings → Plugins → ⚙ (dişli) → Manage Plugin Repositories… → +** → şu adresi ekle:
+   ```
+   https://github.com/sertacdincel-byte/rider-fbx-diff/releases/latest/download/updatePlugins.xml
+   ```
+2. **Marketplace** sekmesinde *FBX Diff Viewer* ara → **Install** → Rider'ı yeniden başlat.
+3. Test: Git log'da bir FBX commit'i seç → dosyaya sağ tık → **Show Diff**. İki model yan yana açılmalı.
+
+Yeni sürümler Rider'ın normal eklenti güncellemesi olarak gelir.
+
+Elle kurulum: [Releases](https://github.com/sertacdincel-byte/rider-fbx-diff/releases) sayfasından `FbxDiff-<sürüm>.zip` indir (açma) → **Settings → Plugins → ⚙ → Install Plugin from Disk…** → zip'i seç → yeniden başlat. Bu yolda güncellemeler otomatik gelmez.
 
 Kaldırma: **Settings → Plugins → Installed → FBX Diff Viewer → Uninstall**, ardından Rider'ı yeniden başlat.
 
@@ -34,13 +40,15 @@ Kaldırma: **Settings → Plugins → Installed → FBX Diff Viewer → Uninstal
 
 ## Install
 
-**From disk**: Rider → **Settings → Plugins → ⚙ → Install Plugin from Disk…** → pick `FbxDiff-<version>.zip` (do not unzip) → restart.
+**Plugin repository** (updates arrive through the IDE):
 
-**Custom repository** (recommended for a team; updates arrive through the IDE):
+1. Rider → **Settings → Plugins → ⚙ → Manage Plugin Repositories… → +** →
+   `https://github.com/sertacdincel-byte/rider-fbx-diff/releases/latest/download/updatePlugins.xml`
+2. Install *FBX Diff Viewer* from the **Marketplace** tab and restart. New versions show up as normal plugin updates.
 
-1. Host `FbxDiff-<version>.zip` and `updatePlugins.xml` in the same folder on any HTTPS server or bucket the team can reach.
-2. Each user adds the URL of `updatePlugins.xml` once: **Settings → Plugins → ⚙ → Manage Plugin Repositories… → +**.
-3. Install "FBX Diff Viewer" from the **Marketplace** tab. New versions show up as normal plugin updates.
+The URL always points to the newest GitHub release, whose `updatePlugins.xml` names that release's zip.
+
+**From disk**: download `FbxDiff-<version>.zip` from [Releases](https://github.com/sertacdincel-byte/rider-fbx-diff/releases) → **Settings → Plugins → ⚙ → Install Plugin from Disk…** (do not unzip) → restart.
 
 ### Compatibility
 
@@ -93,10 +101,12 @@ The Java code compiles against the Rider installation's `lib/*` and `plugins/jce
 ### Release
 
 1. Bump `<version>` in `src/main/resources/META-INF/plugin.xml` and add a `<change-notes>` entry.
-2. Add the same entry to `CHANGELOG.md`.
-3. `./build.ps1 -RepositoryUrl <hosting folder URL>`.
-4. Install the zip from disk once and check a real FBX diff.
-5. Upload the zip and `updatePlugins.xml` to the hosting folder (overwrite `updatePlugins.xml`).
+2. Add a `## <version> — <date>` section to `CHANGELOG.md`.
+3. If the viewer changed, run `./build.ps1` so `viewer.html` is regenerated.
+4. Install `build/distributions/FbxDiff-<version>.zip` from disk once and check a real FBX diff.
+5. Commit, then run `./release.ps1` (`-Draft` to review the release on GitHub before publishing).
+
+`release.ps1` refuses a dirty tree, an existing tag or a missing CHANGELOG section. It builds with the committed `viewer.html`, pushes `HEAD`, and creates the GitHub release `v<version>` with the zip and an `updatePlugins.xml` that points at it. Users on the plugin repository URL get the update; nobody has to re-add anything.
 
 ### Layout
 
